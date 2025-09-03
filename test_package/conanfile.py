@@ -1,25 +1,28 @@
-from conans import ConanFile, CMake, tools
+from conan import ConanFile
+from conan.tools.cmake import CMake, cmake_layout
+from conan.tools.build import can_run
 import os
-import pathlib
 
 class ZBarTestConan(ConanFile):
-    settings = 'os', 'compiler', 'build_type', 'arch'
-    generators = 'cmake'
+    settings = "os", "arch", "compiler", "build_type"
+    generators = "CMakeToolchain", "CMakeDeps", "VirtualRunEnv"
+    test_type = "explicit"
+
+    def layout(self):
+        cmake_layout(self)
+
+    def requirements(self):
+        self.requires(self.tested_reference_str)
 
     def build(self):
         cmake = CMake(self)
-        cmake.configure(defs={'CMAKE_INSTALL_PREFIX': 'install'})
-        cmake.build(target='install')
-
-    def imports(self):
-        # Cache to simplify installation of libraries and resources
-        imports_dir = 'conanLibs'
-        self.copy('*.dll', src='bin', dst=imports_dir)
-        self.copy('*.so*', src='lib', dst=imports_dir)
-        self.copy('*.dylib*', src='lib', dst=imports_dir)
+        cmake.configure()
+        cmake.build()
 
     def test(self):
-        if not tools.cross_building(self.settings):
-            executable = os.path.join(pathlib.Path().absolute(), 'install', 'bin', 'testApp')
-            qr_code_sample_path = os.path.join(pathlib.Path().absolute(), '..', '..', 'sample_matrix.bin')
-            self.run(executable + ' ' + qr_code_sample_path)
+        if can_run(self):
+            executable = os.path.join(self.cpp.build.bindirs[0], "testApp")
+            qr_code_sample_path = os.path.join(self.package_folder, "sample_matrix.bin")
+            cmd = executable + " " + qr_code_sample_path
+            self.output.info("Running " + cmd)
+            self.run(cmd, env="conanrun")

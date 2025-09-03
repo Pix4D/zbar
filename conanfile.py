@@ -1,43 +1,53 @@
-from conans import ConanFile, CMake, tools
+from conan import ConanFile
+from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
 
 class ZBarConan(ConanFile):
     name = 'zbar'
-    lib_version = '0.23.93'
-    revision = '1'
-    version = '{}-{}'.format(lib_version, revision)
+    version = '0.23.93'
     settings = 'os', 'compiler', 'build_type', 'arch'
     description = 'ZBar QR Code Reader'
     url = 'git@github.com:Pix4D/ZBar.git'
     license = 'LGPL'
-    generators = 'cmake'
     exports_sources = [
             'zbar/*',
             'include/*',
             'cmake/*',
             'CMakeLists.txt',
             ]
+    package_type = "library"
     options = {
-            'shared' : [True, False],
-            }
-    default_options = 'shared=True'
+        "shared" : [True],
+    }
+    default_options = {
+        "shared": True
+    }
+
+    def layout(self):
+        cmake_layout(self)
+        self.cpp.package.builddirs.append("lib/cmake")
+
+    def package_info(self):
+        self.cpp_info.set_property("cmake_find_mode", "none")
 
     def requirements(self):
         if self.settings.os == 'Windows':
-            self.requires('libiconv/[>=1.15.0-0, include_prerelease=True]@pix4d/stable')
+            self.requires('libiconv/[>=1.15]')
+
+    def generate(self):
+        deps = CMakeDeps(self)
+        deps.generate()
+        tc = CMakeToolchain(self)
+        cmake_defs = {
+            'BUILD_SHARED_LIBS': True,
+        }
+        tc.variables.update(cmake_defs)
+        tc.generate()
 
     def build(self):
-        cmake = CMake(self, parallel=True)
-        cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
-
+        cmake = CMake(self)
         cmake.configure()
-        cmake.build(target='install')
+        cmake.build()
 
-    def package_info(self):
-        self.cpp_info.includedirs = ['include']  # Ordered list of include paths
-        self.cpp_info.libdirs = ['lib']  # Directories where libs are located
-        self.cpp_info.libs = ['zbar']
-
-    def package_id(self):
-        # Make all options and dependencies (direct and transitive) contribute
-        # to the package id
-        self.info.requires.full_package_mode()
+    def package(self):
+        cmake = CMake(self)
+        cmake.install()

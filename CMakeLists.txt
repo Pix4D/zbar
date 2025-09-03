@@ -1,18 +1,13 @@
-project(zbar_qrcode)
 cmake_minimum_required(VERSION 3.10)
 
+project(zbar_qrcode)
+
 set(CMAKE_C_STANDARD 99)
-
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_set_find_paths()
-conan_set_std()
-conan_set_libcxx()
-
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
-find_package(Threads QUIET)
-find_package(Iconv QUIET)
+find_package(Threads)
+find_package(Iconv REQUIRED)
 
 find_file(HAVE_INTTYPES_H "inttypes.h" DOC "inttypes.h exists")
 find_file(HAVE_FEATURES_H "features.h" DOC "features.h exists")
@@ -99,12 +94,10 @@ if(THREADS_FOUND)
             Threads::Threads
     )
 endif()
-if (ICONV_FOUND)
-    target_link_libraries(zbar
-        PRIVATE
-            Iconv::Iconv
-    )
-endif()
+target_link_libraries(zbar
+    PRIVATE
+        Iconv::Iconv
+)
 if (WIN32)
     target_link_libraries(zbar
         PRIVATE
