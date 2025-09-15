@@ -3,7 +3,7 @@ from conans import ConanFile, CMake, tools
 class ZBarConan(ConanFile):
     name = 'zbar'
     lib_version = '0.23.93'
-    revision = '0'
+    revision = '1'
     version = '{}-{}'.format(lib_version, revision)
     settings = 'os', 'compiler', 'build_type', 'arch'
     description = 'ZBar QR Code Reader'
@@ -23,7 +23,7 @@ class ZBarConan(ConanFile):
 
     def requirements(self):
         if self.settings.os == 'Windows':
-            self.requires('libiconv/1.15.0-0@pix4d/stable')
+            self.requires('libiconv/[>=1.15.0-0, include_prerelease=True]@pix4d/stable')
 
     def build(self):
         cmake = CMake(self, parallel=True)
